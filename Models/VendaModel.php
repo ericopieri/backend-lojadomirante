@@ -20,15 +20,26 @@ class VendaModel extends Connection
             if ($prepareVenda->rowCount() == 1) {
                 $venda = $prepareVenda->fetch(PDO::FETCH_OBJ);
 
-                $itens = $this->connection->query("SELECT * FROM produto_pedido WHERE produto_pedido.pedido = $venda->codigo")->fetchAll(PDO::FETCH_OBJ);
+                $itens = $this->connection->query(
+                    "SELECT pp.codigo, pp.quantidade, pp.total, pr.codigo as produto_codigo, pr.nome as produto_nome, pr.valor as produto_valor, pr.deletadoEm as produto_deletadoEm, tp.nome as produto_tipo_nome, tp.percentual_imposto, tp.codigo as produto_tipo_codigo
+                    FROM produto_pedido pp
+                    INNER JOIN produto pr ON pp.produto = pr.codigo
+                    INNER JOIN tipo_produto tp on pr.tipo = tp.codigo
+                    WHERE pp.pedido = $id"
+                )->fetchAll(PDO::FETCH_OBJ);
 
-                foreach ($itens as $item) {
-                    $produto = $this->connection->query("SELECT * FROM produto WHERE produto.codigo = {$item->produto}")->fetch(PDO::FETCH_OBJ);
-                    $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = {$produto->tipo}")->fetch(PDO::FETCH_OBJ);
+                // metodo antigo
+                // foreach ($itens as $item) {
+                //     $produto = $this->connection->query(
+                //         "SELECT
+                //             pr.*,
+                //             tp.nome as tipo_nome, tp.codigo as tipo_codigo, tp.percentual_imposto
+                //         FROM produto pr INNER JOIN tipo_produto tp ON tp.codigo = pr.tipo
+                //         WHERE pr.codigo = $item->produto"
+                //     )->fetch(PDO::FETCH_OBJ);
 
-                    $produto->tipo = $tipo;
-                    $item->produto = $produto;
-                };
+                //     $item->produto = $produto;
+                // };
 
                 $venda->itens = $itens;
                 return array("status" => "success", "data" => $venda);
@@ -38,6 +49,7 @@ class VendaModel extends Connection
             return array("status" => "Error", "message" => "Objeto solicitado não existe!");
         } catch (PDOException $err) {
             http_response_code(500);
+            return array("status" => "Error", "message" => $err->getMessage());
             return array("status" => "Error", "message" => "Algo de errado aconteceu, desculpe!");
         }
     }
@@ -47,8 +59,7 @@ class VendaModel extends Connection
         try {
             $this->connection->beginTransaction();
 
-            $datetime = date("Y-m-d H:i:s");
-            $sqlNewVenda = $this->connection->prepare("INSERT INTO pedido (data, total) VALUES ('$datetime', :total)");
+            $sqlNewVenda = $this->connection->prepare("INSERT INTO pedido (data, total) VALUES (NOW(), :total)");
             $sqlNewVenda->bindValue(":total", $validatedData["total"]);
             $sqlNewVenda->execute();
 
@@ -84,26 +95,36 @@ class VendaModel extends Connection
         try {
             $this->connection->beginTransaction();
 
-            $prepareVendas = $this->connection->prepare("SELECT * FROM pedido");
-            $prepareVendas->execute();
-            $vendas = $prepareVendas->fetchAll(PDO::FETCH_OBJ);
+            $sqlVendas = $this->connection->prepare("SELECT * FROM pedido");
+            $sqlVendas->execute();
+            $vendas = $sqlVendas->fetchAll(PDO::FETCH_OBJ);
 
             foreach ($vendas as $venda) {
-                $prepareItensVenda = $this->connection->prepare("SELECT * FROM produto_pedido WHERE produto_pedido.pedido = :codigo");
-                $prepareItensVenda->bindValue(":codigo", $venda->codigo);
-                $prepareItensVenda->execute();
 
-                $itensVenda = $prepareItensVenda->fetchAll(PDO::FETCH_OBJ);
+                // metodo antigo
+                // $prepareItensVenda = $this->connection->prepare("SELECT * FROM produto_pedido WHERE produto_pedido.pedido = :codigo");
+                // $prepareItensVenda->bindValue(":codigo", $venda->codigo);
+                // $prepareItensVenda->execute();
 
-                foreach ($itensVenda as $itemVenda) {
-                    $produto = $this->connection->query("SELECT * FROM produto WHERE produto.codigo = $itemVenda->produto")->fetch(PDO::FETCH_OBJ);
-                    $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = {$produto->tipo}")->fetch(PDO::FETCH_OBJ);
+                // $itensVenda = $prepareItensVenda->fetchAll(PDO::FETCH_OBJ);
 
-                    $produto->tipo = $tipo;
-                    $itemVenda->produto = $produto;
-                }
+                // foreach ($itensVenda as $itemVenda) {
+                //     $produto = $this->connection->query("SELECT * FROM produto WHERE produto.codigo = $itemVenda->produto")->fetch(PDO::FETCH_OBJ);
+                //     $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = {$produto->tipo}")->fetch(PDO::FETCH_OBJ);
 
-                $venda->itens = $itensVenda;
+                //     $produto->tipo = $tipo;
+                //     $itemVenda->produto = $produto;
+                // }
+
+                $itens = $this->connection->query(
+                    "SELECT pp.codigo, pp.quantidade, pp.total, pr.codigo as produto_codigo, pr.nome as produto_nome, pr.valor as produto_valor, pr.deletadoEm as produto_deletadoEm, tp.nome as produto_tipo_nome, tp.percentual_imposto, tp.codigo as produto_tipo_codigo
+                    FROM produto_pedido pp
+                    INNER JOIN produto pr ON pp.produto = pr.codigo
+                    INNER JOIN tipo_produto tp on pr.tipo = tp.codigo
+                    WHERE pp.pedido = $venda->codigo"
+                )->fetchAll(PDO::FETCH_OBJ);
+
+                $venda->itens = $itens;
             }
 
             $this->connection->commit();
