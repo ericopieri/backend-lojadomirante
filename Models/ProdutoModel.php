@@ -8,21 +8,21 @@ class ProdutoModel extends Connection
         parent::__construct();
     }
 
-    public function delete($id)
+    public function delete($codigo)
     {
         try {
-            $sql = "DELETE FROM produto WHERE produto.codigo = :codigo";
+            $sql = "UPDATE produto SET deletadoEm = NOW() WHERE produto.codigo = :codigo";
             $prepareDelete = $this->connection->prepare($sql);
-            $prepareDelete->bindValue(":codigo", $id);
+            $prepareDelete->bindValue(":codigo", $codigo);
             $prepareDelete->execute();
 
             if ($prepareDelete->rowCount() > 0) {
                 http_response_code(200);
-                return array("status" => "success", "message" => "Tipo de Produto deletado com sucesso!");
+                return array("status" => "success", "message" => "Produto deletado com sucesso!");
             }
 
             http_response_code(400);
-            return array("status" => "error", "message" => "Tipo de Produto não encontrado para deletar!");
+            return array("status" => "error", "message" => "Produto não encontrado para deletar!");
         } catch (PDOException $err) {
             http_response_code(500);
             return array("status" => "error", "message" => "Algo falhou!");
@@ -32,7 +32,7 @@ class ProdutoModel extends Connection
     public function get($id)
     {
         try {
-            $sql = "SELECT * FROM produto WHERE produto.codigo = :id";
+            $sql = "SELECT pr.*, tp.nome as tipo_nome, tp.percentual_imposto, tp.codigo as tipo_codigo FROM produto pr INNER JOIN tipo_produto tp ON pr.tipo = tp.codigo WHERE pr.codigo = :id";
             $prepareProduto = $this->connection->prepare($sql);
             $prepareProduto->bindValue(":id", $id);
             $prepareProduto->execute();
@@ -40,9 +40,10 @@ class ProdutoModel extends Connection
             if ($prepareProduto->rowCount() > 0) {
                 $produto = $prepareProduto->fetch(PDO::FETCH_OBJ);
 
-                $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = $produto->tipo")->fetch(PDO::FETCH_OBJ);
+                // metodo antigo, pesado
+                // $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = $produto->tipo")->fetch(PDO::FETCH_OBJ);
 
-                $produto->tipo = $tipo;
+                // $produto->tipo = $tipo;
 
                 http_response_code(200);
                 return array("status" => "success", "data" => $produto);
@@ -59,12 +60,12 @@ class ProdutoModel extends Connection
     public function getAll()
     {
         try {
-            $produtos = $this->connection->query("SELECT * FROM produto")->fetchAll(PDO::FETCH_OBJ);
+            $produtos = $this->connection->query("SELECT pr.*, tp.nome as tipo_nome, tp.codigo as tipo_codigo, tp.percentual_imposto FROM produto pr INNER JOIN tipo_produto tp ON tp.codigo = pr.tipo WHERE pr.deletadoEm IS NULL")->fetchAll(PDO::FETCH_OBJ);
 
-            foreach ($produtos as $produto) {
-                $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = $produto->tipo")->fetch(PDO::FETCH_OBJ);
-                $produto->tipo = $tipo;
-            }
+            // foreach ($produtos as $produto) { // primeira lógica, pesada
+            //     $tipo = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.codigo = $produto->tipo")->fetch(PDO::FETCH_OBJ);
+            //     $produto->tipo = $tipo;
+            // }
 
             http_response_code(200);
             return array("status" => "success", "data" => $produtos);
@@ -78,14 +79,14 @@ class ProdutoModel extends Connection
     {
         try {
             $sql = "UPDATE produto SET nome = :nome, valor = :valor, tipo = :tipo WHERE produto.codigo = :id";
-            $preparePatch = $this->connection->prepare($sql);
-            $preparePatch->bindValue(":nome", $validatedData["nome"]);
-            $preparePatch->bindValue(":valor", $validatedData["valor"]);
-            $preparePatch->bindValue(":tipo", $validatedData["tipo"]);
-            $preparePatch->bindValue(":id", $id);
-            $preparePatch->execute();
+            $prepareUpdate = $this->connection->prepare($sql);
+            $prepareUpdate->bindValue(":nome", $validatedData["nome"]);
+            $prepareUpdate->bindValue(":valor", $validatedData["valor"]);
+            $prepareUpdate->bindValue(":tipo", $validatedData["tipo"]);
+            $prepareUpdate->bindValue(":id", $id);
+            $prepareUpdate->execute();
 
-            if ($preparePatch->rowCount() > 0) {
+            if ($prepareUpdate->rowCount() > 0) {
                 http_response_code(200);
                 return array("status" => "success", "message" => "Informações do Produto atualizadas com sucesso!");
             }
