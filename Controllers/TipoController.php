@@ -10,6 +10,13 @@ class TipoController
         $this->model = new TipoModel();
     }
 
+    public function delete($id)
+    {
+        if (is_array($this->model->delete($id))) {
+            echo json_encode($this->model->delete($id));
+        }
+    }
+
     public function update($id)
     {
         $validatedData = $this->validateInfo();

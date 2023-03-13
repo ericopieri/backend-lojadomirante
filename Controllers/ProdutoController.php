@@ -12,7 +12,9 @@ class ProdutoController
 
     public function delete($id)
     {
-        echo json_encode($this->model->delete($id));
+        if (is_array($this->model->delete($id))) {
+            echo json_encode($this->model->delete($id));
+        }
     }
 
     public function update($id)
