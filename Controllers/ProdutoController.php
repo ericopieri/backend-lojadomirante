@@ -60,9 +60,9 @@ class ProdutoController
                 }
 
                 return array(
-                    "tipo" => $tipo,
-                    "nome" => trim($nome),
-                    "valor" => $valor
+                    "tipo" => strip_tags(trim($tipo)),
+                    "nome" => strip_tags(trim($nome)),
+                    "valor" => strip_tags(trim($valor))
                 );
             }
 

@@ -67,8 +67,8 @@ class TipoController
                 }
 
                 return array(
-                    "nome" => trim($nome),
-                    "percentual_imposto" => $percentual_imposto
+                    "nome" => strip_tags(trim($nome)),
+                    "percentual_imposto" => strip_tags(trim($percentual_imposto))
                 );
             }
 
