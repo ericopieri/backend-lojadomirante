@@ -17,8 +17,8 @@ class ProdutoModel extends Connection
             $prepareDelete->execute();
 
             if ($prepareDelete->rowCount() > 0) {
-                http_response_code(200);
-                return array("status" => "success", "message" => "Produto deletado com sucesso!");
+                http_response_code(204);
+                return null;
             }
 
             http_response_code(400);
