@@ -51,21 +51,21 @@ class VendaController
                     die(json_encode(array("status" => "error", "message" => "Sem itens para esta Venda!")));
                 }
 
-                $quantidadeNegativa = false;
+                $erroItens = false;
                 foreach ($itens as $item) {
                     if ($item->quantidade < 1 or $item->total < 0 or !is_numeric($item->quantidade) or !is_numeric($item->quantidade)) {
-                        $quantidadeNegativa = true;
+                        $erroItens = true;
                     }
                 }
 
-                if ($quantidadeNegativa) {
+                if ($erroItens) {
                     http_response_code(400);
                     die(json_encode(array("status" => "error", "message" => "Há erros nos seus items!")));
                 }
 
                 return array(
                     "itens" => $itens,
-                    "total" => $total,
+                    "total" => strip_tags(trim($total)),
                 );
             }
 
