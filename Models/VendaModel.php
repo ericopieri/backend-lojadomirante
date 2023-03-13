@@ -14,7 +14,7 @@ class VendaModel extends Connection
         try {
             $sql = "SELECT * FROM pedido WHERE pedido.codigo = :codigo";
             $prepareVenda = $this->connection->prepare($sql);
-            $prepareVenda->bindValue(":codigo", $id);
+            $prepareVenda->bindValue(":codigo", strip_tags($id));
             $prepareVenda->execute();
 
             if ($prepareVenda->rowCount() == 1) {
@@ -25,7 +25,7 @@ class VendaModel extends Connection
                     FROM produto_pedido pp
                     INNER JOIN produto pr ON pp.produto = pr.codigo
                     INNER JOIN tipo_produto tp on pr.tipo = tp.codigo
-                    WHERE pp.pedido = $id"
+                    WHERE pp.pedido = " . strip_tags($id)
                 )->fetchAll(PDO::FETCH_OBJ);
 
                 // metodo antigo
@@ -69,9 +69,9 @@ class VendaModel extends Connection
                 foreach ($validatedData["itens"] as $item) {
                     $sqlItensPedido = "INSERT INTO produto_pedido (pedido, produto, quantidade, total) VALUES ($idPedido, :codigoProduto, :quantidade, :total)";
                     $prepareItensPedido = $this->connection->prepare($sqlItensPedido);
-                    $prepareItensPedido->bindValue(":codigoProduto", $item->produto->codigo);
-                    $prepareItensPedido->bindValue(":quantidade", $item->quantidade);
-                    $prepareItensPedido->bindValue(":total", $item->total);
+                    $prepareItensPedido->bindValue(":codigoProduto", strip_tags($item->produto->codigo));
+                    $prepareItensPedido->bindValue(":quantidade", strip_tags($item->quantidade));
+                    $prepareItensPedido->bindValue(":total", strip_tags($item->total));
 
                     $prepareItensPedido->execute();
                 }
