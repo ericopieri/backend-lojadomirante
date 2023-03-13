@@ -8,6 +8,46 @@ class TipoModel extends Connection
         parent::__construct();
     }
 
+    public function delete($id)
+    {
+        try {
+            $produtosP = $this->connection->prepare(
+                "SELECT *
+                FROM produto
+                WHERE produto.tipo = :tipo"
+            );
+            $produtosP->bindValue(":tipo", $id);
+            $produtosP->execute();
+            $produtos = $produtosP->fetchAll(PDO::FETCH_OBJ);
+
+            if (count($produtos) > 0) {
+                foreach ($produtos as $produto) {
+                    $sql = "UPDATE produto
+                            SET deletadoEm = NOW()
+                            WHERE produto.codigo = :codigo";
+                    $prepareD = $this->connection->prepare($sql);
+                    $prepareD->bindValue(":codigo", $produto->codigo);
+                    $prepareD->execute();
+                }
+            }
+
+            $deleteT = $this->connection->prepare("UPDATE tipo_produto SET deletadoEm = NOW() WHERE tipo_produto.codigo = :codigo");
+            $deleteT->bindValue(":codigo", $id);
+            $deleteT->execute();
+
+            if ($deleteT->rowCount() > 0) {
+                http_response_code(204);
+                return null;
+            }
+
+            http_response_code(400);
+            return array("status" => "error", "message" => "Tipo de Produto não encontrado no sistema!");
+        } catch (PDOException $err) {
+            http_response_code(500);
+            return array("status" => "error", "message" => "Algo falhou!");
+        }
+    }
+
     public function update($validatedData, $id)
     {
         try {
@@ -34,7 +74,7 @@ class TipoModel extends Connection
     public function get($id)
     {
         try {
-            $sql = "SELECT * FROM tipo_produto WHERE tipo_produto.codigo = :id";
+            $sql = "SELECT * FROM tipo_produto WHERE tipo_produto.codigo = :id AND tipo_produto.deletadoEm IS NULL";
             $prepareTipo = $this->connection->prepare($sql);
             $prepareTipo->bindValue(":id", $id);
             $prepareTipo->execute();
@@ -57,7 +97,7 @@ class TipoModel extends Connection
     public function getAll()
     {
         try {
-            $tipos = $this->connection->query("SELECT * FROM tipo_produto")->fetchAll(PDO::FETCH_OBJ);
+            $tipos = $this->connection->query("SELECT * FROM tipo_produto WHERE tipo_produto.deletadoEm IS NULL")->fetchAll(PDO::FETCH_OBJ);
 
             http_response_code(200);
             return array("status" => "success", "data" => $tipos);
