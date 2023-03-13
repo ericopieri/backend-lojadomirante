@@ -55,7 +55,7 @@ class TipoModel extends Connection
             $preparePatch = $this->connection->prepare($sql);
             $preparePatch->bindValue(":nome", $validatedData["nome"]);
             $preparePatch->bindValue(":percentual_imposto", $validatedData["percentual_imposto"]);
-            $preparePatch->bindValue(":id", $id);
+            $preparePatch->bindValue(":id", strip_tags($id));
             $preparePatch->execute();
 
             if ($preparePatch->rowCount() > 0) {
@@ -76,7 +76,7 @@ class TipoModel extends Connection
         try {
             $sql = "SELECT * FROM tipo_produto WHERE tipo_produto.codigo = :id AND tipo_produto.deletadoEm IS NULL";
             $prepareTipo = $this->connection->prepare($sql);
-            $prepareTipo->bindValue(":id", $id);
+            $prepareTipo->bindValue(":id", strip_tags($id));
             $prepareTipo->execute();
 
             if ($prepareTipo->rowCount() > 0) {
